@@ -31,7 +31,7 @@ public class ConsultaAtivaService {
     @Autowired
     BDSimulate bdSimulate;
 
-    @KafkaListener(topics = "processos", groupId = "processo_group", containerFactory = "kafkaListenerContainerFactory")
+    //@KafkaListener(topics = "processos", groupId = "processo_group", containerFactory = "kafkaListenerContainerFactory")
     public void consumerConsultaAtiva(Processo requestProcesso) throws JsonProcessingException {
 
         log.info("Processo recebido: {}", requestProcesso.getNumeroProcesso());

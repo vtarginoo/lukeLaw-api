@@ -19,38 +19,6 @@ public class MovimentoService {
 
     private static final Logger log = LoggerFactory.getLogger(MovimentoService.class);
 
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(
-            "dd/MM/yyyy HH:mm:ss");
-
-    public Movimento criarMovimento(String movimentoScrape) {
-        try {
-            // Separa a string em partes usando parênteses como delimitadores
-            String[] partes = movimentoScrape.split("\\(");
-            if (partes.length < 2) {
-                throw new IllegalArgumentException(
-                        "Formato inválido para a string de movimentação: " + movimentoScrape);
-            }
-
-            // A primeira parte é o nome da movimentação
-            String nome = partes[0].trim();
-
-            // A segunda parte contém a data e hora, remover o parêntese final e o código "00"
-            String dataHoraString = partes[1].split("\\)")[0].trim();
-
-            // Converte a string de data e hora para LocalDateTime
-            LocalDateTime dataHora = LocalDateTime.parse(dataHoraString, DATE_TIME_FORMATTER);
-
-            // Define o código 999 para o último movimento
-            Long ordem = 999L;
-
-            // Retorna o novo objeto Movimento
-            return new Movimento(ordem, nome, dataHora);
-
-        } catch (DateTimeParseException | ArrayIndexOutOfBoundsException e) {
-            throw new IllegalArgumentException("Erro ao parsear a string de movimentação: "
-                    + movimentoScrape, e);
-        }
-    }
 
     public AnaliseDeMovimento analisarMovimentacao(Processo processo) {
         // Obter o último movimento

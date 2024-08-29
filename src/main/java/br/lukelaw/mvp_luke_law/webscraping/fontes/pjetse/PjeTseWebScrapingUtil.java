@@ -1,99 +1,115 @@
 package br.lukelaw.mvp_luke_law.webscraping.fontes.pjetse;
 
+import br.lukelaw.mvp_luke_law.webscraping.AntiCaptchaService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.lightbody.bmp.BrowserMobProxy;
+import net.lightbody.bmp.proxy.CaptureType;
 import org.openqa.selenium.*;
+
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
+
+import org.openqa.selenium.WebDriver;
+
+
+
 @Service
 public class PjeTseWebScrapingUtil {
 
-    //Scraping Inicial para pegar a última movimentação
-    public static List<String> ScrapingUltimaMov(WebDriver driver, String url, String numProcesso)
-            throws InterruptedException {
+    @Autowired
+    private AntiCaptchaService antiCaptchaService;
 
-        // Acessa a página do PJE Consulta Pública do TJ-RJ
+    private static final Logger log = LoggerFactory.getLogger(PjeTseWebScrapingUtil.class);
+
+
+    public List<String> ScrapingUltimaMov(WebDriver driver, BrowserMobProxy proxy, String url, String numProcesso) throws InterruptedException {
+        final StringBuilder interceptedResponseBody = new StringBuilder();
+
+        // Configura o proxy para capturar o conteúdo da resposta
+        proxy.enableHarCaptureTypes(CaptureType.REQUEST_CONTENT, CaptureType.RESPONSE_CONTENT);
+
+        // Carrega a página
         driver.get(url);
 
-        // Adiciona o cookie rxvisitor manualmente
-        Cookie rxVisitorCookie = new Cookie(
-                "rxvisitor", "1722960632647NRQOMJVLQSK7UM5RBBNRF8S5QGFHD1R7");
-
-        driver.manage().addCookie(rxVisitorCookie);
-
-        // Adiciona o valor no local storage
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript(
-                "window.localStorage.setItem('rxvisitor', '1722960632647NRQOMJVLQSK7UM5RBBNRF8S5QGFHD1R7');");
-
-        // Recarrega a página para que o cookie seja aplicado
-        driver.navigate().refresh();
-
-        // Identifica o campo de pesquisa e insere o número do processo
-        WebElement searchField = driver.findElement(By.id(
-                "fPP:numProcesso-inputNumeroProcessoDecoration:numProcesso-inputNumeroProcesso"));
+        // Interage com a página
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        WebElement searchField = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.cssSelector("input[formcontrolname='numeroProcesso']")));
 
         searchField.sendKeys(numProcesso);
+        log.info("Número do processo inserido: {}", numProcesso);
 
-        // Simula o pressionamento da tecla Enter para submeter a busca
-        searchField.sendKeys(Keys.ENTER);
 
-        // Espera um pouco para a página de login carregar, se for o caso
-        Thread.sleep(2000);
+        WebElement searchButton = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//button[@class='push-top-sm mr-20 mat-raised-button mat-button-base mat-primary']")));
+        searchButton.click();
+        log.info("Botão de pesquisa clicado.");
 
-        // Verifica se a página de login foi carregada
-        if (driver.getCurrentUrl().contains("login")) {
-            System.out.println("Redirecionado para a página de login, voltando...");
+        // Espera para garantir que a requisição seja processada e o proxy capture a resposta
+        Thread.sleep(90000);
 
-            // Volta para a página anterior
-            driver.navigate().back();
+        // Captura e processa as requisições interceptadas
+        proxy.getHar().getLog().getEntries().forEach(entry -> {
+            if (entry.getRequest().getUrl().contains("/consulta-publica-unificada/processo/10/0")) {
+                interceptedResponseBody.append(entry.getResponse().getContent().getText());
+                log.info("Response Body: {}", interceptedResponseBody.toString());
+            }
+        });
 
-            // Reenvia a pesquisa
-            searchField = driver.findElement(By.id(
-                    "fPP:numProcesso-inputNumeroProcessoDecoration:numProcesso-inputNumeroProcesso"));
+        String capturedResponse = interceptedResponseBody.toString();
+        log.info("Captured Response: {}", capturedResponse);
 
-            searchField.sendKeys(numProcesso);
-            searchField.sendKeys(Keys.ENTER);
+        // Chama o método privado para analisar o JSON e extrair as informações desejadas
+        return analisarJson(capturedResponse);
+    }
 
-            // Aguarda um tempo para a página carregar novamente
-            Thread.sleep(2000);
-        }
 
-        // =============== Scraping =======================
 
-        // Espera explícita para garantir que o elemento esteja presente antes de acessá-lo
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        WebElement movimentacaoElement = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//tbody[@id='fPP:processosTable:tb']/tr[1]/td[3]")));
 
-        // Captura a última movimentação
-        String ultimaMovimentacao = movimentacaoElement.getText();
-        System.out.println("Última movimentação capturada: " + ultimaMovimentacao);
 
-        // Captura o conteúdo do <td> que contém as partes e o número do processo
-        WebElement partesElement = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//tbody[@id='fPP:processosTable:tb']/tr[1]/td[2]")));
 
-        // Obtém o texto dentro da âncora <a> (que você deseja remover depois)
-        String textoDentroDaAncora = partesElement.findElement(By.tagName("a")).getText();
-        // Obtém o texto total do <td>
-        String textoCompleto = partesElement.getText();
-        // Remove o texto dentro da âncora para obter apenas as partes envolvidas
-        String partesEnvolvidas = textoCompleto.replace(textoDentroDaAncora, "").trim();
-        partesEnvolvidas = partesEnvolvidas.substring(textoCompleto.indexOf("\n") + 2).trim();
-
-        System.out.println("Partes envolvidas capturadas: " + partesEnvolvidas);
-
-        // Cria uma lista para armazenar as informações capturadas
+    private List<String> analisarJson(String jsonResponse) {
         List<String> resultado = new ArrayList<>();
-        resultado.add(partesEnvolvidas);
-        resultado.add(ultimaMovimentacao);
+
+        try {
+            // Parseia o JSON capturado
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(jsonResponse);
+
+            // Acessa o segundo elemento da lista principal (onde estão os detalhes do processo)
+            JsonNode processoNode = rootNode.get(1).get(0);
+
+            // Extrai o Assunto Principal
+            String assuntoPrincipal = processoNode.path("assuntoPrincipal").asText();
+            log.info("Assunto Principal: {}", assuntoPrincipal);
+            resultado.add(assuntoPrincipal);
+
+            // Extrai o Último Movimento
+            String ultimoMovimento = processoNode.path("ultimoMovimento").asText();
+            log.info("Último Movimento: {}", ultimoMovimento);
+            resultado.add(ultimoMovimento);
+
+            // Extrai a Data do Último Movimento
+            String dataUltimoMovimento = processoNode.path("dataUltimoMovimento").asText();
+            log.info("Data do Último Movimento: {}", dataUltimoMovimento);
+            resultado.add(dataUltimoMovimento);
+
+        } catch (Exception e) {
+            log.error("Erro ao processar o JSON: {}", e.getMessage(), e);
+            e.printStackTrace();
+            resultado.add("Erro ao processar o JSON: " + e.getMessage());
+        }
 
         return resultado;
     }
 }
-

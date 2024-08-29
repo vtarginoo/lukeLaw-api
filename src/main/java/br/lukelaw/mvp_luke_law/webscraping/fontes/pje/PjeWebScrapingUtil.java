@@ -1,5 +1,6 @@
 package br.lukelaw.mvp_luke_law.webscraping.fontes.pje;
 
+
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @Service
 public class PjeWebScrapingUtil {
+
 
     //Scraping Inicial para pegar a última movimentação
     public static List<String> ScrapingUltimaMov(WebDriver driver, String url, String numProcesso)

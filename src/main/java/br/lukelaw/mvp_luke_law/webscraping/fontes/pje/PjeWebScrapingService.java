@@ -5,6 +5,7 @@ import br.lukelaw.mvp_luke_law.webscraping.config.WebDriverFactory;
 import br.lukelaw.mvp_luke_law.webscraping.entity.Movimento;
 import br.lukelaw.mvp_luke_law.webscraping.entity.Processo;
 import br.lukelaw.mvp_luke_law.webscraping.exception.WebScrapingException;
+import br.lukelaw.mvp_luke_law.webscraping.service.CriaMovimentoService;
 import org.openqa.selenium.*;
 
 
@@ -18,7 +19,7 @@ import java.util.List;
 public class PjeWebScrapingService {
 
     @Autowired
-    MovimentoService movimentoService;
+    CriaMovimentoService movimentoService;
 
     public Processo scrapePjeUltimoMov(String numProcesso) {
         WebDriver driver = WebDriverFactory.createChromeDriver();
@@ -42,7 +43,7 @@ public class PjeWebScrapingService {
             System.out.println("Movimentação capturada: " + ultimaMovimentacao);
 
             // Transforma a string capturada em um objeto Movimento
-            ultimoMovimento = movimentoService.criarMovimento(ultimaMovimentacao);
+            ultimoMovimento = movimentoService.criarMovimentoPje(ultimaMovimentacao);
 
             System.out.println("Movimento criado: " + ultimoMovimento);
             // Insere o último movimento na lista

@@ -121,10 +121,27 @@
 		</dependency>
 
 		<dependency>
-			<groupId>net.lightbody.bmp</groupId>
-			<artifactId>browsermob-core</artifactId>
-			<version>2.1.5</version>
+			<groupId>com.github.2captcha</groupId>
+			<artifactId>2captcha-java</artifactId>
+			<version>1.1.2</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.seleniumhq.selenium</groupId>
+			<artifactId>selenium-devtools-v128</artifactId>
+			<version>4.24.0</version>
+		</dependency>
+
+
+		<!-- Dependência do Gson -->
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.10.1</version>
+		</dependency>
+
+
+
 
 	</dependencies>
 

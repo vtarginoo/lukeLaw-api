@@ -27,6 +27,11 @@ public class WebScrapingController {
     @Autowired
     private PjeTseWebScrapingService tseWebScrapingService;
 
+
+
+
+
+
     @PostMapping("/pje")
     public ResponseEntity<Processo> scrapePje(@Valid @NotNull @RequestBody WSRequest request) {
         System.out.println("Received numProcesso: " + request.getNumProcesso());
@@ -47,7 +52,7 @@ public class WebScrapingController {
 public ResponseEntity<Processo> scrapePjeTse(@Valid @NotNull @RequestBody WSRequest request) {
     System.out.println("Received numProcesso: " + request.getNumProcesso());
 
-    Processo requestProcesso = tseWebScrapingService.scrapePjeUltimoMov(request.getNumProcesso());
+    Processo requestProcesso = tseWebScrapingService.scrapePjeTseUltimoMov(request.getNumProcesso());
 
     if (requestProcesso == null) {
         throw new ProcessNotFoundException("Processo não encontrado para o número: "

@@ -31,7 +31,7 @@ public class ConsultaAtivaService {
     @Autowired
     BDSimulate bdSimulate;
 
-    //@KafkaListener(topics = "processos", groupId = "processo_group", containerFactory = "kafkaListenerContainerFactory")
+    @KafkaListener(topics = "processos", groupId = "processo_group", containerFactory = "kafkaListenerContainerFactory")
     public void consumerConsultaAtiva(Processo requestProcesso) throws JsonProcessingException {
 
         log.info("Processo recebido: {}", requestProcesso.getNumeroProcesso());
@@ -39,8 +39,8 @@ public class ConsultaAtivaService {
         var analiseDeMovimento = movimentoService.analisarMovimentacao(requestProcesso);
 
         // Coloque a negação para testar a notificação mesmo quando o movimento não é recente
-        if (analiseDeMovimento.isMovimentoRecente()) {
-            List<Integer> advogadosAssociados = bdSimulate.processosAssociados.get(requestProcesso.getNumeroProcesso());
+        if (!analiseDeMovimento.isMovimentoRecente()) {
+            List<Integer> advogadosAssociados = bdSimulate.processosAssociadosTSE.get(requestProcesso.getNumeroProcesso());
             if (advogadosAssociados != null) {
                 for (int advId : advogadosAssociados) {
                     User advogado = bdSimulate.usuarios.stream()
